@@ -1,16 +1,40 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { UserContext } from "../context/user.context";
+import axios from "../config/axios";
+import { useNavigate } from "react-router-dom";
 const Home = () => {
   const { user } = useContext(UserContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
+  const [project, setProject] = useState([]);
+  const navigate = useNavigate();
   function createProject(e) {
     e.preventDefault();
     console.log("Creating project:", projectName);
+    axios
+      .post("/projects/create", { name: projectName })
+      .then((res) => {
+        console.log("Project created:", res);
+        setIsModalOpen(false);
+      })
+      .catch((err) => {
+        console.error("Error creating project:", err);
+      });
   }
+  useEffect(() => {
+    axios
+      .get("/projects/all")
+      .then((res) => {
+        console.log("All projects:", res.data);
+        setProject(res.data.projects);
+      })
+      .catch((err) => {
+        console.error("Error fetching projects:", err);
+      });
+  }, []);
   return (
     <main className="p-4">
-      <div className="projects">
+      <div className="projects flex flex-wrap gap-4">
         <button
           className="project p-4 border border-slate-300 rounded-md"
           onClick={() => setIsModalOpen(true)}
@@ -18,6 +42,26 @@ const Home = () => {
           New Project
           <i className="ri-add-circle-line ml-2"></i>
         </button>
+
+        {project.map((proj) => (
+          <div
+            key={proj.id}
+            onClick={() => {
+              navigate(`/project`, {
+                state: { project },
+              });
+            }}
+            className="project flex flex-col gap-2 p-4 border border-slate-300 rounded-md cursor-pointer min-w-52 hover:bg-slate-300"
+          >
+            <h2 className="font-semibold">{proj.name}</h2>
+            <div className="flex gap-2">
+              <p>
+                <i class="ri-user-3-line"></i> <small>Collaborators</small> :
+              </p>
+              {proj.users.length}
+            </div>
+          </div>
+        ))}
       </div>
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
